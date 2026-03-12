@@ -1,0 +1,452 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>MISS KWEK - Life Fun Quiz (P1-P6)</title>
+<style>
+:root {
+  --bg: linear-gradient(135deg, #ffe5f0, #e0f7ff);
+  --card: #ffffffdd;
+  --primary: #ff6f61;
+  --secondary: #ffca28;
+  --accent: #4dd0e1;
+  --text: #333;
+  --h1: 2.5rem;
+}
+body,html {
+  margin:0;padding:0;
+  font-family: "Comic Sans MS", cursive, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.hidden { display:none; }
+.container { width:90%; max-width:600px; text-align:center; }
+button { cursor:pointer; }
+h1 { font-size: var(--h1); margin:.5rem 0; }
+.card { background: var(--card); border-radius:20px; padding:1.5rem; box-shadow:0 4px 8px rgba(0,0,0,.1); }
+.btn { display:inline-block; margin:.5rem; padding:.8rem 1.2rem; border:none; border-radius:12px;
+  font-size:1.1rem; background:var(--primary); color:#fff; transition:transform .1s,background .3s; }
+.btn:hover { transform:scale(1.05); }
+.btn:active { transform:scale(.95); }
+.level-btn { width:3rem;height:3rem;line-height:3rem;font-size:1.2rem;background:var(--secondary); color:#333; }
+.toggle { margin:.5rem; }
+#mascot { width:120px;height:120px;margin:auto; }
+@keyframes bounce { 0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)} }
+@keyframes wiggle { 0%{transform:rotate(0)}25%{transform:rotate(5deg)}75%{transform:rotate(-5deg)}100%{transform:rotate(0)} }
+@keyframes confetti { 0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(200px)} }
+.confetti-piece { position:absolute; width:6px;height:12px; background:#ff6f61; animation:confetti .8s linear; }
+.scoreboard { display:flex; justify-content:space-around; margin:.5rem 0; }
+.sound-toggle { position:absolute; top:10px; right:10px; font-size:1.5rem; cursor:pointer; }
+
+/* celebration overlay */
+#treasureOverlay{
+  position:fixed; top:0; left:0; right:0; bottom:0;
+  background:rgba(0,0,0,0.6);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  color:#fff; font-size:2rem; z-index:1000; pointer-events:none;
+  opacity:0; transition:opacity .3s;
+}
+#treasureOverlay.show { opacity:1; pointer-events:auto; }
+#walkAnim{
+  position:absolute; bottom:20px; left:-10%;
+  font-size:2rem; animation:walk 1.5s linear;
+}
+@keyframes walk { to{left:110%;} }
+
+</style>
+</head>
+<body>
+ 
+<div id="intro" class="container" style="max-width:900px; display:flex; align-items:center; gap:1rem;">
+  <img src="MissKwek.png" alt="MISSKWEK" style="width:200px;">
+  <div>
+    <h1>Hello! I'm MISSKWEK</h1>
+    <p>Welcome! Click a button below to begin.</p>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:8px">
+      <a class="btn" href="grammar.html">Play: Grammar Quest</a>
+      <a class="btn" href="phonics.html">Play: A-Z Voice</a>
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn" id="startIntroBtn">More Activities</button>
+    </div>
+  </div>
+</div>
+<div id="home" class="container hidden">
+  <h1>MISSKWEK</h1>
+  <div>Select level</div>
+  <div id="levelSelect"></div>
+  <div class="toggle"><label><input type="checkbox" id="sillyMode"> Silly Mode</label></div>
+  <button class="btn" id="startBtn">Start</button>
+</div>
+  <div id="game" class="container hidden">
+  <div class="scoreboard">
+    <div>Time: <span id="timer">0</span>s</div>
+    <div>Score: <span id="score">0</span></div>
+    <div>Streak: <span id="streak">0</span></div>
+  </div>
+  <div id="progress"></div>
+  <div class="card" id="questionCard"></div>
+  <div id="answers"></div>
+  
+</div>
+<div id="feedback" class="container hidden">
+  <div id="fbText" class="card"></div>
+  <div id="fbExplain" class="card"></div>
+  <button class="btn" id="nextBtn">Next</button>
+</div>
+
+<!-- celebration overlay shown when answer is correct -->
+<div id="treasureOverlay">
+  <div>Congratulations!</div>
+  <div id="walkAnim">Walk</div>
+</div>
+
+<div id="end" class="container hidden">
+  <h1>All done!</h1>
+  <div id="endStats" class="card"></div>
+  <button class="btn" id="playAgain">Play Again</button>
+</div>
+<script>
+// mascot svg states
+const mascots = {
+  intro:`<img src="./MissKwek.png" alt="MISSKWEK" style="width:160px;height:200px;object-fit:contain;">`,
+  idle:`<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#ffca28"/><circle cx="40" cy="45" r="5"/><circle cx="60" cy="45" r="5"/><path d="M40,60 q10,10 20,0" stroke="#333" fill="none"/></svg>`,
+  thinking:`<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#ffca28"/><circle cx="40" cy="45" r="5"/><circle cx="60" cy="45" r="5"/><path d="M40,60 q10,10 20,0" stroke="#333" fill="none"/><circle cx="55" cy="20" r="5" fill="#fff"/></svg>`,
+  correct_1:`<svg viewBox="0 0 100 100" class="bounce"><circle cx="50" cy="50" r="40" fill="#ffca28"/><circle cx="35" cy="40" r="5"/><circle cx="65" cy="40" r="5"/><path d="M35,60 q15,20 30,0" stroke="#333" fill="none"/></svg>`,
+  correct_2:`<svg viewBox="0 0 100 100" class="bounce"><circle cx="50" cy="50" r="40" fill="#ffca28"/><circle cx="35" cy="40" r="5"/><circle cx="65" cy="40" r="5"/><path d="M35,55 q15,25 30,0" stroke="#333" fill="none"/></svg>`,
+  wrong_1:`<svg viewBox="0 0 100 100" class="wiggle"><circle cx="50" cy="50" r="40" fill="#ffca28"/><circle cx="35" cy="40" r="5"/><circle cx="65" cy="40" r="5"/><path d="M40,65 q10,-10 20,0" stroke="#333" fill="none"/></svg>`,
+  streak:`<svg viewBox="0 0 100 100" class="bounce"><circle cx="50" cy="50" r="40" fill="#ffca28"/><circle cx="35" cy="40" r="5"/><circle cx="65" cy="40" r="5"/><path d="M35,60 q15,20 30,0" stroke="#333" fill="none"/><polygon points="50,10 55,30 45,30" fill="#fff"/></svg>`
+};
+function showMascot(state){ document.getElementById('mascot').innerHTML = mascots[state] || mascots.idle; }
+
+// base questions per level
+const base = {
+  1:[
+    {q:"What color is the sky on a clear day?",choices:["Blue","Green","Red","Yellow"],answer:0,explain:"The sky looks blue because of how air scatters sunlight."},
+    {q:"How many legs does a typical chair have?",choices:["3","4","5","6"],answer:1,explain:"Most chairs have four legs."},
+    {q:"Which one do you eat cereal from?",choices:["Bowl","Shoe","Hat","Car"],answer:0,explain:"Cereal is put in a bowl."},
+    {q:"What sound does a cat make?",choices:["Meow","Woof","Moo","Tweet"],answer:0,explain:"Cats say meow."},
+    {q:"A day has how many hours?",choices:["24","12","30","60"],answer:0,explain:"One day is 24 hours long."},
+    {q:"What do you use to brush your teeth?",choices:["Brush","Fork","Spoon","Knife"],answer:0,explain:"A toothbrush cleans your teeth."},
+    {q:"Which is bigger: an elephant or a mouse?",choices:["Elephant","Mouse","Same","Neither"],answer:0,explain:"Elephants are much larger than mice."},
+    {q:"What color are most bananas?",choices:["Yellow","Red","Blue","Green"],answer:0,explain:"Bananas are yellow when ripe."},
+    {q:"How many wheels does a bicycle have?",choices:["2","3","4","1"],answer:0,explain:"Bicycles have two wheels."},
+    {q:"What do bees make?",choices:["Honey","Milk","Juice","Bread"],answer:0,explain:"Bees produce honey."},
+    {q:"Which animal says 'quack'?",choices:["Duck","Cow","Dog","Cat"],answer:0,explain:"Ducks quack."},
+    {q:"What do you wear on your head?",choices:["Hat","Shoes","Gloves","Belt"],answer:0,explain:"Hats go on your head."},
+    {q:"How many fingers do you have on one hand?",choices:["5","4","6","3"],answer:0,explain:"Humans have five fingers per hand."},
+    {q:"What is the color of grass?",choices:["Green","Blue","Red","Yellow"],answer:0,explain:"Grass is green."},
+    {q:"Which is colder: ice or fire?",choices:["Ice","Fire","Same","Neither"],answer:0,explain:"Ice is cold, fire is hot."},
+    {q:"What do you drink from?",choices:["Glass","Plate","Fork","Knife"],answer:0,explain:"You drink from a glass."},
+    {q:"How many eyes do you have?",choices:["2","1","3","4"],answer:0,explain:"People have two eyes."},
+    {q:"What is the sun?",choices:["Star","Planet","Moon","Cloud"],answer:0,explain:"The sun is a star."},
+    {q:"Which is faster: a car or a snail?",choices:["Car","Snail","Same","Neither"],answer:0,explain:"Cars are faster than snails."},
+    {q:"What do cows give us?",choices:["Milk","Eggs","Honey","Wool"],answer:0,explain:"Cows produce milk."},
+    {q:"How many days in a week?",choices:["7","5","10","12"],answer:0,explain:"There are seven days in a week."},
+    {q:"What color is blood?",choices:["Red","Blue","Green","Yellow"],answer:0,explain:"Blood is red."},
+    {q:"Which animal has a long neck?",choices:["Giraffe","Elephant","Lion","Tiger"],answer:0,explain:"Giraffes have long necks."},
+    {q:"What do you use to write?",choices:["Pen","Spoon","Fork","Knife"],answer:0,explain:"You write with a pen."},
+    {q:"How many sides does a triangle have?",choices:["3","4","5","6"],answer:0,explain:"A triangle has three sides."}
+  ],
+  2:[
+    {q:"Which comes first: morning or night?",choices:["Morning","Night","Evening","Midnight"],answer:0,explain:"Morning comes before night."},
+    {q:"What do you wear on your feet to walk outside?",choices:["Shoes","Gloves","Hat","Belt"],answer:0,explain:"Shoes go on your feet."},
+    {q:"If you have two apples and eat one, how many left?",choices:["1","2","0","3"],answer:0,explain:"2-1 is 1."},
+    {q:"Which is not a fruit: apple, carrot, banana, pear?",choices:["Carrot","Apple","Banana","Pear"],answer:0,explain:"Carrot is a vegetable."},
+    {q:"What do you call water when it freezes?",choices:["Ice","Steam","Mist","Juice"],answer:0,explain:"Frozen water is ice."},
+    {q:"What is the opposite of hot?",choices:["Cold","Warm","Wet","Dry"],answer:0,explain:"Cold is the opposite of hot."},
+    {q:"How many months in a year?",choices:["12","10","13","11"],answer:0,explain:"There are twelve months."},
+    {q:"Which is bigger: a house or a car?",choices:["House","Car","Same","Neither"],answer:0,explain:"Houses are bigger than cars."},
+    {q:"What do you use to cut paper?",choices:["Scissors","Pen","Brush","Fork"],answer:0,explain:"Scissors cut paper."},
+    {q:"Which animal lives in water?",choices:["Fish","Bird","Cat","Dog"],answer:0,explain:"Fish live in water."},
+    {q:"What is the color of the ocean?",choices:["Blue","Green","Red","Yellow"],answer:0,explain:"The ocean is blue."},
+    {q:"How many ears do you have?",choices:["2","1","3","4"],answer:0,explain:"People have two ears."},
+    {q:"What do you call a baby dog?",choices:["Puppy","Kitten","Calf","Foal"],answer:0,explain:"A baby dog is a puppy."},
+    {q:"Which is heavier: a rock or a feather?",choices:["Rock","Feather","Same","Neither"],answer:0,explain:"Rocks are heavier than feathers."},
+    {q:"What do you wear to bed?",choices:["Pajamas","Shoes","Hat","Coat"],answer:0,explain:"You wear pajamas to bed."},
+    {q:"How many colors in a rainbow?",choices:["7","5","6","8"],answer:0,explain:"Rainbows have seven colors."},
+    {q:"Which is taller: a tree or a flower?",choices:["Tree","Flower","Same","Neither"],answer:0,explain:"Trees are taller than flowers."},
+    {q:"What do you use to eat soup?",choices:["Spoon","Fork","Knife","Plate"],answer:0,explain:"You eat soup with a spoon."},
+    {q:"Which planet is closest to the sun?",choices:["Mercury","Venus","Earth","Mars"],answer:0,explain:"Mercury is closest to the sun."},
+    {q:"What is the opposite of up?",choices:["Down","Left","Right","Front"],answer:0,explain:"Down is the opposite of up."},
+    {q:"How many teeth do adults have?",choices:["32","28","30","34"],answer:0,explain:"Adults have 32 teeth."},
+    {q:"Which is faster: a plane or a bike?",choices:["Plane","Bike","Same","Neither"],answer:0,explain:"Planes are faster than bikes."},
+    {q:"What do you call frozen rain?",choices:["Hail","Snow","Rain","Mist"],answer:0,explain:"Frozen rain is hail."},
+    {q:"Which animal has stripes?",choices:["Zebra","Lion","Tiger","Elephant"],answer:0,explain:"Zebras have stripes."},
+    {q:"What do you use to see yourself?",choices:["Mirror","Window","Door","Wall"],answer:0,explain:"You see yourself in a mirror."}
+  ],
+  3:[
+    {q:"If you jump in a pool, you get wet. True or false?",choices:["True","False","Maybe","Sometimes"],answer:0,explain:"Water wets you when you jump in."},
+    {q:"What has hands but no fingers?",choices:["Clock","Tree","Dog","Car"],answer:0,explain:"A clock has hands."},
+    {q:"Which weighs more, 1kg feathers or 1kg rice?",choices:["Same","Feathers","Rice","Neither"],answer:0,explain:"Both weigh one kilogram."},
+    {q:"You see something in the mirror you can't see otherwise. What?",choices:["Your face","Your back","Your shoe","Your hair"],answer:1,explain:"Mirrors show your back."},
+    {q:"What gets wetter the more it dries?",choices:["Towel","Sponge","Water","Sun"],answer:0,explain:"A towel dries you and gets wet."},
+    {q:"What has a head but no body?",choices:["Coin","Nail","Screw","Bolt"],answer:0,explain:"A coin has a head."},
+    {q:"Which is lighter: air or water?",choices:["Air","Water","Same","Neither"],answer:0,explain:"Air is lighter than water."},
+    {q:"What can you catch but not throw?",choices:["Cold","Ball","Fish","Bird"],answer:0,explain:"You can catch a cold."},
+    {q:"Which is round: a ball or a box?",choices:["Ball","Box","Both","Neither"],answer:0,explain:"Balls are round."},
+    {q:"What has keys but can't open locks?",choices:["Piano","Car","Door","Safe"],answer:0,explain:"A piano has keys."},
+    {q:"Which is bigger: the sun or the moon?",choices:["Sun","Moon","Same","Neither"],answer:0,explain:"The sun is bigger than the moon."},
+    {q:"What do you call a group of fish?",choices:["School","Flock","Herd","Pack"],answer:0,explain:"Fish swim in a school."},
+    {q:"Which is sharper: a knife or a spoon?",choices:["Knife","Spoon","Same","Neither"],answer:0,explain:"Knives are sharper than spoons."},
+    {q:"What has a neck but no head?",choices:["Bottle","Shirt","Hat","Shoe"],answer:0,explain:"A bottle has a neck."},
+    {q:"Which is hotter: fire or ice?",choices:["Fire","Ice","Same","Neither"],answer:0,explain:"Fire is hotter than ice."},
+    {q:"What can you break without touching?",choices:["Promise","Glass","Wood","Metal"],answer:0,explain:"You can break a promise."},
+    {q:"Which is longer: a minute or an hour?",choices:["Hour","Minute","Same","Neither"],answer:0,explain:"An hour is longer than a minute."},
+    {q:"What has a tongue but can't taste?",choices:["Shoe","Hat","Glove","Belt"],answer:0,explain:"A shoe has a tongue."},
+    {q:"Which is colder: snow or rain?",choices:["Snow","Rain","Same","Neither"],answer:0,explain:"Snow is colder than rain."},
+    {q:"What can you hold in your right hand but not in your left?",choices:["Left hand","Right hand","Both","Neither"],answer:0,explain:"You can hold your left hand in your right hand."},
+    {q:"Which is bigger: a lake or a pond?",choices:["Lake","Pond","Same","Neither"],answer:0,explain:"Lakes are bigger than ponds."},
+    {q:"What has a face and two hands but no arms?",choices:["Clock","Watch","Mirror","Door"],answer:0,explain:"A clock has a face and hands."},
+    {q:"Which is faster: light or sound?",choices:["Light","Sound","Same","Neither"],answer:0,explain:"Light is faster than sound."},
+    {q:"What can you serve but not eat?",choices:["Tennis ball","Food","Drink","Cake"],answer:0,explain:"You serve a tennis ball."},
+    {q:"Which is heavier: a ton of bricks or a ton of feathers?",choices:["Same","Bricks","Feathers","Neither"],answer:0,explain:"Both weigh a ton."}
+  ],
+  4:[
+    {q:"Which word is spelled wrong in every dictionary?",choices:["Wrong","Right","Left","Up"],answer:0,explain:"The word 'wrong' is spelled w-r-o-n-g."},
+    {q:"If you have it, you want to share it; if you share it, you don't have it. What is it?",choices:["Secret","Candy","Toy","Book"],answer:0,explain:"A secret is lost when shared."},
+    {q:"What goes up but never comes down?",choices:["Age","Balloon","Smoke","Rain"],answer:0,explain:"Your age only increases."},
+    {q:"Which month has 28 days?",choices:["All of them","February","April","June"],answer:0,explain:"Every month has at least 28 days."},
+    {q:"What can travel around the world while staying in a corner?",choices:["Stamp","Plane","Sun","Cat"],answer:0,explain:"A stamp stays on a corner of an envelope."},
+    {q:"What has many teeth but can't bite?",choices:["Comb","Saw","Fork","Knife"],answer:0,explain:"A comb has teeth."},
+    {q:"Which is the odd one out: shoe, sock, hat, glove?",choices:["Sock","Shoe","Hat","Glove"],answer:0,explain:"Sock is worn inside the shoe."},
+    {q:"What can you keep after giving to someone?",choices:["Word","Money","Gift","Food"],answer:0,explain:"You can keep your word."},
+    {q:"Which is bigger: a dime or a nickel?",choices:["Dime","Nickel","Same","Neither"],answer:0,explain:"A dime is bigger than a nickel."},
+    {q:"What has a bottom at the top?",choices:["Leg","Arm","Head","Foot"],answer:0,explain:"A leg has a bottom at the top."},
+    {q:"Which is the beginning of eternity, end of time and space?",choices:["E","T","I","Y"],answer:0,explain:"The letter E."},
+    {q:"What can you hear but not see or touch?",choices:["Sound","Wind","Light","Water"],answer:0,explain:"You can hear sound."},
+    {q:"Which is the odd one out: fork, spoon, knife, plate?",choices:["Plate","Fork","Spoon","Knife"],answer:0,explain:"Plate is not a utensil."},
+    {q:"What has a ring but no finger?",choices:["Phone","Door","Bell","Key"],answer:0,explain:"A phone has a ring."},
+    {q:"Which is longer: a yard or a meter?",choices:["Yard","Meter","Same","Neither"],answer:0,explain:"A yard is longer than a meter."},
+    {q:"What can you fill a room with but takes up no space?",choices:["Light","Air","Water","Sound"],answer:0,explain:"You can fill a room with light."},
+    {q:"Which is the odd one out: eye, ear, nose, mouth?",choices:["Mouth","Eye","Ear","Nose"],answer:0,explain:"Mouth is not a sense organ."},
+    {q:"What has a head, a tail, but no body?",choices:["Coin","Snake","Fish","Bird"],answer:0,explain:"A coin has a head and tail."},
+    {q:"Which is colder: Antarctica or the North Pole?",choices:["Antarctica","North Pole","Same","Neither"],answer:0,explain:"Antarctica is colder."},
+    {q:"What can you catch in your eye but not in your hand?",choices:["Cold","Ball","Fish","Bird"],answer:0,explain:"You can catch a cold in your eye."},
+    {q:"Which is the odd one out: Monday, Tuesday, Wednesday, Friday?",choices:["Friday","Monday","Tuesday","Wednesday"],answer:0,explain:"Friday is not a weekday in sequence."},
+    {q:"What has four fingers and a thumb but is not alive?",choices:["Glove","Hand","Paw","Foot"],answer:0,explain:"A glove has fingers and thumb."},
+    {q:"Which is bigger: a gallon or a liter?",choices:["Gallon","Liter","Same","Neither"],answer:0,explain:"A gallon is bigger than a liter."},
+    {q:"What can you break without it being damaged?",choices:["Record","Glass","Wood","Metal"],answer:0,explain:"You can break a record."},
+    {q:"Which is the odd one out: heart, club, diamond, spade?",choices:["Heart","Club","Diamond","Spade"],answer:0,explain:"Heart is not a suit in cards."}
+  ],
+  5:[
+    {q:"Why do we yawn?",choices:["Tired","Hungry","Happy","Sad"],answer:0,explain:"Yawning usually means tiredness."},
+    {q:"What is heavier: a kilogram of lead or a kilogram of feathers?",choices:["Same","Lead","Feathers","Neither"],answer:0,explain:"They both weigh one kilogram."},
+    {q:"If you take two apples from three, how many do you have?",choices:["2","1","3","0"],answer:0,explain:"You have the two you took."},
+    {q:"Why do shadows follow you?",choices:["Light blocked","They're pets","Weather","Sound"],answer:0,explain:"Shadows appear when light is blocked."},
+    {q:"Water turns into what when boiled?",choices:["Steam","Ice","Sand","Smoke"],answer:0,explain:"Boiling water makes steam."},
+    {q:"Why do we have seasons?",choices:["Earth tilts","Sun moves","Moon changes","Wind blows"],answer:0,explain:"Earth's tilt causes seasons."},
+    {q:"What happens to water when it freezes?",choices:["Expands","Shrinks","Stays same","Disappears"],answer:0,explain:"Water expands when freezing."},
+    {q:"Why is the sky blue?",choices:["Light scatters","Air reflects","Clouds block","Sun shines"],answer:0,explain:"Blue light scatters more."},
+    {q:"What do plants need to grow?",choices:["Sunlight","Darkness","Cold","Wind"],answer:0,explain:"Plants need sunlight."},
+    {q:"Why do we sweat?",choices:["Cool down","Warm up","Exercise","Sleep"],answer:0,explain:"Sweating cools the body."},
+    {q:"What is the hardest natural substance?",choices:["Diamond","Steel","Gold","Silver"],answer:0,explain:"Diamond is the hardest."},
+    {q:"Why do stars twinkle?",choices:["Atmosphere","Clouds","Moon","Sun"],answer:0,explain:"Atmosphere makes stars twinkle."},
+    {q:"What do magnets attract?",choices:["Iron","Wood","Plastic","Paper"],answer:0,explain:"Magnets attract iron."},
+    {q:"Why do we blink?",choices:["Clean eyes","See better","Hear sounds","Smell things"],answer:0,explain:"Blinking cleans and moistens eyes."},
+    {q:"What is the largest planet?",choices:["Jupiter","Saturn","Earth","Mars"],answer:0,explain:"Jupiter is the largest."},
+    {q:"Why do leaves change color?",choices:["Less sunlight","More rain","Wind","Snow"],answer:0,explain:"Less sunlight changes leaf color."},
+    {q:"What do bees do with pollen?",choices:["Make honey","Build hives","Fly away","Sleep"],answer:0,explain:"Bees make honey from pollen."},
+    {q:"Why do we have fingerprints?",choices:["Grip better","Identify","See in dark","Hear better"],answer:0,explain:"Fingerprints help with gripping."},
+    {q:"What is the fastest animal?",choices:["Cheetah","Lion","Tiger","Elephant"],answer:0,explain:"Cheetah is the fastest."},
+    {q:"Why do we dream?",choices:["Brain processes","Sleep deeper","Eat more","Exercise"],answer:0,explain:"Brain processes during sleep."},
+    {q:"What do volcanoes erupt?",choices:["Lava","Water","Air","Sand"],answer:0,explain:"Volcanoes erupt lava."},
+    {q:"Why do we hiccup?",choices:["Diaphragm spasms","Cold air","Hot food","Loud noise"],answer:0,explain:"Diaphragm spasms cause hiccups."},
+    {q:"What is the smallest bone?",choices:["Ear","Finger","Toe","Nose"],answer:0,explain:"The ear has the smallest bone."},
+    {q:"Why do we have eyebrows?",choices:["Protect eyes","Hear better","Smell better","Taste better"],answer:0,explain:"Eyebrows protect eyes from sweat."},
+    {q:"What do caterpillars become?",choices:["Butterflies","Moths","Bees","Flies"],answer:0,explain:"Caterpillars become butterflies."}
+  ],
+  6:[
+    {q:"What number do you get when you multiply all the numbers on a phone keypad?",choices:["0","1","9","45"],answer:0,explain:"The keypad has a zero, so product is zero."},
+    {q:"If two's company and three's a crowd, what are four and five?",choices:["Nine","Seven","Eleven","Love"],answer:0,explain:"Four plus five equals nine."},
+    {q:"You see a boat filled with people but there isn't a single person on board. How is that?",choices:["They are all married","They left","Ghosts","Underwater"],answer:0,explain:"Everyone on board is married."},
+    {q:"Which is the odd one out: inch, pound, ounce, kilometer?",choices:["Kilometer","Inch","Pound","Ounce"],answer:0,explain:"Kilometer measures distance in metric."},
+    {q:"I have keys but open no locks. What am I?",choices:["Piano","Car","Door","Safe"],answer:0,explain:"A piano has keys."},
+    {q:"What has 13 hearts but no other organs?",choices:["Deck of cards","Clock","Calendar","Dice"],answer:0,explain:"A deck of cards has 13 hearts."},
+    {q:"If you have me, you want to share me; if you share me, you don't have me. What am I?",choices:["Secret","Money","Food","Toy"],answer:0,explain:"A secret."},
+    {q:"What can you hold in your left hand but not in your right?",choices:["Right hand","Left hand","Both","Neither"],answer:0,explain:"Your right hand."},
+    {q:"Which is the odd one out: time, hour, minute, second?",choices:["Time","Hour","Minute","Second"],answer:0,explain:"Time is not a unit."},
+    {q:"What has a head, a foot, and four legs but can't walk?",choices:["Bed","Chair","Table","Sofa"],answer:0,explain:"A bed has a head and foot."},
+    {q:"If you multiply me by any other number, the answer is always me. What am I?",choices:["0","1","2","10"],answer:1,explain:"1 times anything is 1."},
+    {q:"What can travel around the world while staying in a corner?",choices:["Stamp","Letter","Envelope","Postcard"],answer:0,explain:"A stamp."},
+    {q:"Which is the odd one out: nose, ear, eye, tongue?",choices:["Tongue","Nose","Ear","Eye"],answer:0,explain:"Tongue is not external."},
+    {q:"What has many needles but can't sew?",choices:["Pine tree","Cactus","Porcupine","Hedgehog"],answer:0,explain:"A pine tree has needles."},
+    {q:"If you have three apples and you take away two, how many do you have?",choices:["2","1","3","0"],answer:0,explain:"You have the two you took."},
+    {q:"What can you catch but not throw?",choices:["Cold","Ball","Fish","Bird"],answer:0,explain:"A cold."},
+    {q:"Which is the odd one out: shoe, boot, sandal, sock?",choices:["Sock","Shoe","Boot","Sandal"],answer:0,explain:"Sock is not footwear."},
+    {q:"What has a ring but no finger?",choices:["Telephone","Doorbell","Alarm","Clock"],answer:0,explain:"A telephone rings."},
+    {q:"If you divide 30 by half and add 10, what do you get?",choices:["70","40","25","55"],answer:0,explain:"Half of 30 is 15, 15+10=25? Wait, divide by half is multiply by 2, 30*2=60+10=70."},
+    {q:"What can you serve but not eat?",choices:["Tennis","Volleyball","Basketball","Soccer"],answer:0,explain:"Serve in tennis."},
+    {q:"Which is the odd one out: heart, spade, club, diamond?",choices:["Heart","Spade","Club","Diamond"],answer:0,explain:"Heart is not a suit."},
+    {q:"What has a neck but no head?",choices:["Bottle","Guitar","Shirt","Coat"],answer:0,explain:"A bottle."},
+    {q:"If you have me, you don't share me; if you share me, you don't have me. What am I?",choices:["Secret","Money","Food","Toy"],answer:0,explain:"A secret."},
+    {q:"What can you break without touching it?",choices:["Promise","Glass","Wood","Metal"],answer:0,explain:"A promise."},
+    {q:"Which is the odd one out: Monday, Tuesday, Wednesday, Thursday?",choices:["Thursday","Monday","Tuesday","Wednesday"],answer:0,explain:"Thursday is not in sequence."}
+  ]
+};
+// expand to 25 per level - now base has 25 each, so no need to expand, but keep for consistency
+const qBank = {};
+for(let lvl=1;lvl<=6;lvl++){
+  const b = base[lvl];
+  qBank[lvl]=[];
+  for(let i=0;i<25;i++){
+    const item = Object.assign({}, b[i % b.length]);
+    item.q = item.q + (i< b.length ? "" : ` (${i+1})`);
+    qBank[lvl].push(item);
+  }
+}
+
+let selectedLevel=1, silly=false;
+let questions=[], current=0, score=0, streak=0, timer=0, timerId;
+
+const levelSelect = document.getElementById('levelSelect');
+for(let i=1;i<=6;i++){
+  const btn=document.createElement('button');
+  btn.textContent="P"+i;
+  btn.className="level-btn";
+  btn.onclick=()=>{ selectedLevel=i; [...levelSelect.children].forEach(b=>b.style.out=""); btn.style.out="2px solid #000"; };
+  if(i===1) btn.style.out="2px solid #000";
+  levelSelect.appendChild(btn);
+}
+document.getElementById('sillyMode').onchange=e=>silly=e.target.checked;
+document.getElementById('startIntroBtn').onclick=()=>showScreen('home');
+document.getElementById('startBtn').onclick=startGame;
+document.getElementById('nextBtn').onclick=nextQuestion;
+document.getElementById('playAgain').onclick=()=>location.reload();
+document.addEventListener('keydown',e=>{
+  if(gameOn && e.key>="1" && e.key<="4"){
+    const idx=+e.key-1;
+    document.querySelectorAll('#answers button')[idx]?.click();
+  }
+});
+// show intro on load
+window.addEventListener('load', ()=>{
+  // nothing needed here anymore
+});
+
+function startGame(){
+  questions = shuffle(qBank[selectedLevel]).slice(0,10).map(q => ({...q}));
+  current=0; score=0; streak=0;
+  showScreen('game');
+  loadQuestion();
+}
+
+function loadQuestion(){
+  clearInterval(timerId);
+  if(current>=questions.length){ endGame(); return; }
+  const q=questions[current];
+  showMascot('thinking');
+  document.getElementById('progress').textContent=`Question ${current+1}/${questions.length}`;
+  document.getElementById('questionCard').textContent= silly ? q.q+" !!" : q.q;
+  const ansDiv=document.getElementById('answers');
+  ansDiv.innerHTML="";
+  q.choices.forEach((c,i)=>{
+    const b=document.createElement('button');
+    b.className="btn";
+    b.textContent=silly?c+" !!":c;
+    b.onclick=()=>checkAnswer(i);
+    ansDiv.appendChild(b);
+  });
+  // timer
+  timer = selectedLevel<=2?15:(selectedLevel<=4?18:20);
+  document.getElementById('timer').textContent=timer;
+  timerId=setInterval(()=>{
+    timer--;
+    document.getElementById('timer').textContent=timer;
+    if(timer<=0){ clearInterval(timerId); checkAnswer(-1); }
+  },1000);
+  gameOn=true;
+}
+
+function checkAnswer(idx){
+  clearInterval(timerId);
+  gameOn=false;
+  const q=questions[current];
+  const correct = idx===q.answer;
+  const fb=document.getElementById('fbText');
+  fb.textContent = correct? "Correct!":"Oops!";
+  document.getElementById('fbExplain').textContent=q.explain;
+  if(correct){
+    score+=10;
+    streak++;
+    showTreasure();
+    if(streak>=3) showMascot('streak');
+    else showMascot(Math.random()<.5?'correct_1':'correct_2');
+    confetti();
+  } else {
+    streak=0;
+    showMascot('wrong_1');
+  }
+  document.getElementById('score').textContent=score;
+  document.getElementById('streak').textContent=streak;
+  showScreen('feedback');
+  setTimeout(nextQuestion,1200);
+}
+
+function nextQuestion(){
+  current++;
+  showScreen('game');
+  loadQuestion();
+}
+
+function endGame(){
+  showMascot('idle');
+  clearInterval(timerId);
+  const acc = Math.round((score/(questions.length*10))*100);
+  const bests = JSON.parse(localStorage.getItem('MISSKWEK_best')||"{}");
+  if(!bests[selectedLevel]||score>bests[selectedLevel]) bests[selectedLevel]=score;
+  localStorage.setItem('MISSKWEK_best',JSON.stringify(bests));
+  document.getElementById('endStats').innerHTML=
+    `Score: ${score}<br>Accuracy: ${acc}%<br>Best P${selectedLevel}: ${bests[selectedLevel]}`;
+  showScreen('end');
+}
+
+function showScreen(id){
+  ['intro','home','game','feedback','end'].forEach(s=>{
+    const el=document.getElementById(s);
+    if(el){ el.style.display='none'; el.classList.add('hidden'); }
+  });
+  const el=document.getElementById(id);
+  if(el){ el.style.display=''; el.classList.remove('hidden'); }
+}
+
+function shuffle(a){
+  const arr = [...a];
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function confetti(){
+  for(let i=0;i<30;i++){
+    const d=document.createElement('div');
+    d.className='confetti-piece';
+    d.style.left=Math.random()*100+'%';
+    d.style.background=`hsl(${Math.random()*360},70%,60%)`;
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(),800);
+  }
+}
+
+function showTreasure(){
+  const t=document.getElementById('treasureOverlay');
+  if(!t) return;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1500);
+}
+
+let gameOn=false;
+</script>
+</body>
+</html>
+
+
+
+

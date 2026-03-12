@@ -1,0 +1,386 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ms.Kwek - A-Z Voiceboard</title>
+  <style>
+:root {
+      --bg: linear-gradient(180deg, #f6fffa, #e8f9ff);
+      --header: linear-gradient(90deg, #9be7ff, #6b9cff);
+      --card: #ffffff;
+      --accent: #6b9cff;
+      --text: #13253a;
+      --muted: #4f6070;
+    }
+    * { box-sizing: border-box; font-family: "Comic Sans MS", "Trebuchet MS", Arial, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding-top: 72px; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--header);
+      box-shadow: 0 2px 6px rgba(0,0,0,.06);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+    .logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #ffd27f, #ffb347);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+    }
+    .nav-btn {
+      background: transparent;
+      border: 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform .15s ease, background .2s ease, box-shadow .2s ease;
+    }
+    .nav-btn.current { background: rgba(255,255,255,.4); }
+    .nav-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,.68); box-shadow: 0 5px 12px rgba(0,0,0,.09); }
+    main { padding: 14px; max-width: 1040px; margin: 18px auto; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+      gap: 10px;
+    }
+    .letter {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      font-size: 32px;
+      box-shadow: 0 6px 18px rgba(11,22,40,.05);
+      cursor: pointer;
+      border: 0;
+      color: var(--text);
+      font-weight: 700;
+      transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
+    }
+    .letter:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 10px 20px rgba(11,22,40,.12); background: #edf3ff; }
+
+    .section-title {
+      margin: 20px 0 10px;
+      font-size: 32px;
+      color: #0c2a47;
+    }
+    .vowel-group {
+      margin: 18px 0 22px;
+      background: rgba(255,255,255,.45);
+      border-radius: 16px;
+      padding: 12px;
+    }
+    .vowel-heading {
+      font-size: 22px;
+      color: #1d3557;
+      margin: 4px 0 12px;
+      font-weight: 700;
+    }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .phonics-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 6px 18px rgba(11,22,40,.06);
+    }
+    .word-label {
+      font-size: 14px;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .phonics-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .phoneme-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 0;
+      color: #123;
+      font-size: 24px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(0,0,0,.08);
+      background: #ffd56b;
+      transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
+    }
+    .phoneme-btn.v1 { background: #ffd56b; }
+    .phoneme-btn.v2 { background: #99e3ff; }
+    .phoneme-btn.v3 { background: #c8f7a6; }
+    .phoneme-btn.v4 { background: #ffb6d1; }
+    .phoneme-btn.v5 { background: #d5c8ff; }
+
+    .eq {
+      font-size: 26px;
+      font-weight: 900;
+      color: #284b63;
+      line-height: 1;
+      padding: 0 2px;
+    }
+    .word-btn {
+      border: 0;
+      border-radius: 12px;
+      background: #6b9cff;
+      color: #fff;
+      padding: 10px 14px;
+      font-size: 24px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(107,156,255,.35);
+      text-transform: lowercase;
+      transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
+    }
+    .phoneme-btn:hover,
+    .word-btn:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 10px 20px rgba(0,0,0,.14);
+    }
+    .phoneme-btn.v1:hover { background: #f0c24f; }
+    .phoneme-btn.v2:hover { background: #7ecfea; }
+    .phoneme-btn.v3:hover { background: #aee98a; }
+    .phoneme-btn.v4:hover { background: #f19cc0; }
+    .phoneme-btn.v5:hover { background: #bfaeff; }
+    .word-btn:hover { background: #4f84f2; }
+
+    .nav-btn:focus-visible,
+    .letter:focus-visible,
+    .phoneme-btn:focus-visible,
+    .word-btn:focus-visible {
+      outline: 3px solid #1f4e79;
+      outline-offset: 2px;
+    }
+
+    .press-pop { animation: pop .28s ease; }
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+
+    @media (max-width: 640px) {
+      .letter { font-size: 26px; padding: 12px; }
+      .section-title { font-size: 28px; }
+      .vowel-heading { font-size: 18px; }
+      nav { gap: 8px; flex-wrap: wrap; }
+      .nav-btn { font-size: .95rem; padding: 7px 10px; }
+      .brand { gap: 8px; }
+      .logo { width: 38px; height: 38px; font-size: 18px; }
+      main { padding: 12px; }
+    }
+
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">MK</div>
+      <div>
+        <div style="font-size:16px">Ms.Kwek</div>
+        <div style="font-size:12px;color:#083d77">A-Z Voiceboard</div>
+      </div>
+    </div>
+    <nav>
+      <a class="nav-btn" href="index.html">Home</a>
+      <a class="nav-btn" href="grammar.html">Grammar Quest</a>
+      <a class="nav-btn current" href="phonics.html">A-Z Voice</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Tap a Letter</h2>
+    <div class="grid" id="letterGrid" aria-label="Letters A to Z"></div>
+
+    <h2 class="section-title">SHORT VOWEL SOUND PRACTICE</h2>
+    <div id="vowelPractice"></div>
+  </main>
+
+  <script>
+    const soundsFolder = encodeURIComponent('phonics sounds') + '/';
+    const specialFiles = {
+      o: 'alphasounds-o-sh.mp3',
+      u: 'alphasounds-u-sh.mp3',
+      p: 'alphasounds-p-2.mp3'
+    };
+    const audioCache = {};
+    const letterGrid = document.getElementById('letterGrid');
+    const vowelPractice = document.getElementById('vowelPractice');
+
+    const vowelGroups = [
+      {
+        title: 'Short A (/a/ sound as in "cat")',
+        words: ['cat', 'bat', 'hat', 'map', 'jam', 'bag']
+      },
+      {
+        title: 'Short E (/e/ sound as in "bed")',
+        words: ['bed', 'pen', 'hen', 'red', 'ten', 'web']
+      },
+      {
+        title: 'Short I (/i/ sound as in "sit")',
+        words: ['sit', 'pin', 'pig', 'lip', 'win', 'dig']
+      },
+      {
+        title: 'Short O (/o/ sound as in "hot")',
+        words: ['pot', 'dog', 'log', 'mop', 'top', 'cot']
+      },
+      {
+        title: 'Short U (/u/ sound as in "sun")',
+        words: ['sun', 'cup', 'bus', 'run', 'bug', 'hut']
+      }
+    ];
+
+    function filenameFor(letter) {
+      const l = letter.toLowerCase();
+      if (specialFiles[l]) return specialFiles[l];
+      return `alphasounds-${l}.mp3`;
+    }
+
+    function pressPop(el) {
+      el.classList.remove('press-pop');
+      void el.offsetWidth;
+      el.classList.add('press-pop');
+    }
+
+    function playLetterSound(letter) {
+      const key = letter.toLowerCase();
+      const src = soundsFolder + encodeURIComponent(filenameFor(key));
+      try {
+        let a = audioCache[key];
+        if (!a) {
+          a = new Audio(src);
+          a.preload = 'auto';
+          audioCache[key] = a;
+        }
+        a.pause();
+        a.currentTime = 0;
+        const p = a.play();
+        if (p && p.catch) {
+          p.catch(() => {
+            speakWord(letter);
+          });
+        }
+      } catch (e) {
+        console.warn('playLetterSound', e);
+      }
+    }
+
+    function speakWord(word) {
+      if (!window.speechSynthesis) return;
+      const msg = new SpeechSynthesisUtterance(word);
+      msg.lang = 'en-US';
+      speechSynthesis.cancel();
+      speechSynthesis.speak(msg);
+    }
+
+    for (let i = 0; i < 26; i++) {
+      const L = String.fromCharCode(65 + i);
+      const btn = document.createElement('button');
+      btn.className = 'letter';
+      btn.type = 'button';
+      btn.textContent = L;
+      btn.addEventListener('click', () => {
+        pressPop(btn);
+        playLetterSound(L);
+      });
+      letterGrid.appendChild(btn);
+    }
+
+    vowelGroups.forEach(group => {
+      const section = document.createElement('section');
+      section.className = 'vowel-group';
+
+      const heading = document.createElement('h3');
+      heading.className = 'vowel-heading';
+      heading.textContent = group.title;
+      section.appendChild(heading);
+
+      const cards = document.createElement('div');
+      cards.className = 'cards-grid';
+
+      group.words.forEach(word => {
+        const card = document.createElement('article');
+        card.className = 'phonics-card';
+
+        const label = document.createElement('div');
+        label.className = 'word-label';
+        label.textContent = `Word: ${word}`;
+
+        const row = document.createElement('div');
+        row.className = 'phonics-row';
+
+        [...word].forEach((ch, idx) => {
+          const b = document.createElement('button');
+          b.className = `phoneme-btn v${(idx % 5) + 1}`;
+          b.type = 'button';
+          b.textContent = ch;
+          b.setAttribute('aria-label', `Sound ${ch}`);
+          b.addEventListener('click', () => {
+            pressPop(b);
+            playLetterSound(ch);
+          });
+          row.appendChild(b);
+        });
+
+        const eq = document.createElement('span');
+        eq.className = 'eq';
+        eq.textContent = '=';
+        row.appendChild(eq);
+
+        const wordBtn = document.createElement('button');
+        wordBtn.className = 'word-btn';
+        wordBtn.type = 'button';
+        wordBtn.textContent = word;
+        wordBtn.addEventListener('click', () => {
+          pressPop(wordBtn);
+          speakWord(word);
+        });
+        row.appendChild(wordBtn);
+
+        card.appendChild(label);
+        card.appendChild(row);
+        cards.appendChild(card);
+      });
+
+      section.appendChild(cards);
+      vowelPractice.appendChild(section);
+    });
+
+    window.addEventListener('pointerdown', () => {
+      if (window.speechSynthesis) speechSynthesis.getVoices();
+    }, { once: true });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
