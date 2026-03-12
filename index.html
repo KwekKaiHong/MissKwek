@@ -77,9 +77,6 @@ h1 { font-size: var(--h1); margin:.5rem 0; }
       <a class="btn" href="grammar.html">Play: Grammar Quest</a>
       <a class="btn" href="phonics.html">Play: A-Z Voice</a>
     </div>
-    <div style="margin-top:12px">
-      <button class="btn" id="startIntroBtn">More Activities</button>
-    </div>
   </div>
 </div>
 <div id="home" class="container hidden">
@@ -320,7 +317,8 @@ for(let i=1;i<=6;i++){
   levelSelect.appendChild(btn);
 }
 document.getElementById('sillyMode').onchange=e=>silly=e.target.checked;
-document.getElementById('startIntroBtn').onclick=()=>showScreen('home');
+const startIntroBtn = document.getElementById('startIntroBtn');
+if (startIntroBtn) startIntroBtn.onclick=()=>showScreen('home');
 document.getElementById('startBtn').onclick=startGame;
 document.getElementById('nextBtn').onclick=nextQuestion;
 document.getElementById('playAgain').onclick=()=>location.reload();
