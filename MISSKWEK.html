@@ -12,25 +12,28 @@
   --secondary: #ffca28;
   --accent: #4dd0e1;
   --text: #333;
-  --h1: 2.5rem;
+  --h1: clamp(1.6rem, 3.6vw, 2.1rem);
+  --base-font: clamp(0.95rem, 2vw, 1.05rem);
 }
 body,html {
   margin:0;padding:0;
-  font-family: "Comic Sans MS", cursive, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: var(--base-font);
+  line-height: 1.45;
   background: var(--bg);
   color: var(--text);
-  height:100vh;
+  min-height:100vh;
   display:flex;
   align-items:center;
   justify-content:center;
 }
 .hidden { display:none; }
-.container { width:90%; max-width:600px; text-align:center; }
+.container { width:min(92vw, 640px); text-align:center; }
 button { cursor:pointer; }
 h1 { font-size: var(--h1); margin:.5rem 0; }
 .card { background: var(--card); border-radius:20px; padding:1.5rem; box-shadow:0 4px 8px rgba(0,0,0,.1); }
 .btn { display:inline-block; margin:.5rem; padding:.8rem 1.2rem; border:none; border-radius:12px;
-  font-size:1.1rem; background:var(--primary); color:#fff; transition:transform .1s,background .3s; }
+  font-size:1rem; background:var(--primary); color:#fff; transition:transform .1s,background .3s; }
 .btn:hover { transform:scale(1.05); }
 .btn:active { transform:scale(.95); }
 #intro .btn {
@@ -38,6 +41,23 @@ h1 { font-size: var(--h1); margin:.5rem 0; }
   font-family: Arial, sans-serif;
   font-weight:600;
   text-decoration:none;
+}
+.intro-layout {
+  max-width: 900px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.intro-mascot {
+  width: clamp(140px, 28vw, 200px);
+  height: auto;
+}
+.intro-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
 }
 .level-btn { width:3rem;height:3rem;line-height:3rem;font-size:1.2rem;background:var(--secondary); color:#333; }
 .toggle { margin:.5rem; }
@@ -64,16 +84,45 @@ h1 { font-size: var(--h1); margin:.5rem 0; }
 }
 @keyframes walk { to{left:110%;} }
 
+@media (max-width: 860px) {
+  body,html {
+    align-items: flex-start;
+    padding: 14px 0;
+  }
+  .intro-layout {
+    flex-direction: column;
+    text-align: center;
+    gap: .75rem;
+  }
+  .card {
+    padding: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn {
+    width: 100%;
+    max-width: 320px;
+    margin: .35rem auto;
+  }
+  .level-btn {
+    width: 2.6rem;
+    height: 2.6rem;
+    line-height: 2.6rem;
+    font-size: 1rem;
+  }
+}
+
 </style>
 </head>
 <body>
  
-<div id="intro" class="container" style="max-width:900px; display:flex; align-items:center; gap:1rem;">
-  <img src="MissKwek.png" alt="Ms.Kwek" style="width:200px;">
+<div id="intro" class="container intro-layout">
+  <img src="MissKwek.png" alt="Ms.Kwek" class="intro-mascot">
   <div>
     <h1>Hello! I'm Ms.Kwek</h1>
     <p>Welcome! Click a button below to begin.</p>
-    <div style="display:flex;gap:10px;justify-content:center;margin-top:8px">
+    <div class="intro-actions">
       <a class="btn" href="grammar.html">Play: Grammar Quest</a>
       <a class="btn" href="phonics.html">Play: A-Z Voice</a>
     </div>
